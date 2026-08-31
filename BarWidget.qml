@@ -140,6 +140,7 @@ Panel {
       label: root.cfg(modelData, "label", "WireGuard")
       identityColor: root.identityColor(root.cfg(modelData, "color", ""), 1 + index)
       iface: root.cfg(modelData, "interface", "wg0")
+      connectionName: root.cfg(modelData, "connectionName", "")
       connectCommand: root.cfg(modelData, "connectCommand", "")
       disconnectCommand: root.cfg(modelData, "disconnectCommand", "")
       reachabilityHost: root.cfg(modelData, "reachabilityHost", "")

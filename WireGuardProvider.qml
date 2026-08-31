@@ -33,6 +33,10 @@ Item {
   property string connectCommand: ""
   property string disconnectCommand: ""
   property string reachabilityHost: ""
+  // NetworkManager support: set to the NM connection.id to use nmcli instead of wg-quick.
+  // When set, unitActive is derived from `nmcli con show --active` and default
+  // connect/disconnect use `nmcli con up/down id '<connectionName>'`.
+  property string connectionName: ""
 
   readonly property string unit: "wg-quick@" + iface
 
@@ -80,12 +84,26 @@ Item {
   // ---- actions ---------------------------------------------------------
   function connectVpn() {
     busy = true
-    runShell(connectCommand !== "" ? connectCommand : "systemctl start " + unit)
+    var cmd = connectCommand
+    if (cmd === "") {
+      if (connectionName !== "")
+        cmd = "nmcli con up id '" + connectionName + "'"
+      else
+        cmd = "systemctl start " + unit
+    }
+    runShell(cmd)
   }
 
   function disconnectVpn() {
     busy = true
-    runShell(disconnectCommand !== "" ? disconnectCommand : "systemctl stop " + unit)
+    var cmd = disconnectCommand
+    if (cmd === "") {
+      if (connectionName !== "")
+        cmd = "nmcli con down id '" + connectionName + "'"
+      else
+        cmd = "systemctl stop " + unit
+    }
+    runShell(cmd)
   }
 
   // Toggle on the unit, not on `connected`: a tunnel that is up but has never
@@ -99,8 +117,11 @@ Item {
 
   function refresh() {
     if (!enabled || pollProc.running) return
+    var activeCheck = connectionName !== ""
+      ? "nmcli -t -f NAME con show --active | grep -Fx '" + connectionName + "' >/dev/null 2>&1 && echo active || echo inactive"
+      : "systemctl is-active " + unit + " 2>/dev/null"
     pollProc.command = ["bash", "-lc",
-      'u=$(systemctl is-active ' + unit + ' 2>/dev/null); ' +
+      'u=$(' + activeCheck + '); ' +
       'd=/sys/class/net/' + iface + '/statistics; ' +
       'if [ -d "$d" ]; then p=1; rx=$(cat $d/rx_bytes 2>/dev/null||echo 0); tx=$(cat $d/tx_bytes 2>/dev/null||echo 0); ' +
       'else p=0; rx=0; tx=0; fi; ' +
