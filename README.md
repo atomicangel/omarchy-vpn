@@ -30,7 +30,7 @@ NetworkManager does. On an NM-managed box the unit never exists, so a
 perfectly healthy tunnel shows as "Interface missing" and the switch does
 nothing.
 
-Two additions, everything else upstream's:
+Three changes, everything else upstream's:
 
 * **`connectionName`** — a new field on `wireguard` entries. When set, state
   is read from `nmcli con show --active` and connect/disconnect run
@@ -41,9 +41,14 @@ Two additions, everything else upstream's:
   the `wireguard` list in `shell.json` from the WireGuard profiles
   NetworkManager knows about, merging with what you already have. See
   [Keeping the list in sync](#keeping-the-list-in-sync).
+* **Renamed** — the plugin ID is now `atomicangel.vpn` instead of
+  `paulie420.vpn`, so the widget carries this fork's identity. Original
+  authorship is kept: `author` in the manifest and the credits below still
+  say paulie420.
 
 > **Disclaimer: AI-assisted modification.** The changes in this fork — the
-> `connectionName` support, the sync helper, and this README section — were
+> `connectionName` support, the sync helper, the rename, and this README
+> section — were
 > implemented with an AI coding assistant, then reviewed and tested by the
 > fork's maintainer on a live system. The upstream code, and the parts of the
 > README left untouched, remain paulie420's work.
@@ -135,16 +140,16 @@ Nothing else. It doesn't install anything, and it never writes to your config.
 
 ```bash
 omarchy plugin add https://github.com/atomicangel/omarchy-vpn.git --enable
-omarchy bar move paulie420.vpn --section right
+omarchy bar move atomicangel.vpn --section right
 ```
 
 ## Uninstall
 
 ```bash
-omarchy plugin remove paulie420.vpn
+omarchy plugin remove atomicangel.vpn
 ```
 
-That deletes the folder. If you added a `paulie420.vpn` block to your
+That deletes the folder. If you added an `atomicangel.vpn` block to your
 `shell.json`, delete that too. The plugin won't touch your config, which also
 means it can't clean up after itself.
 
@@ -155,7 +160,7 @@ all of it is optional.
 
 ```jsonc
 {
-  "id": "paulie420.vpn",
+  "id": "atomicangel.vpn",
   "refreshIntervalSec": 5,
 
   "pia": { "enabled": true, "label": "PIA" },
@@ -193,7 +198,7 @@ all of it is optional.
 ```
 
 Heads up: `omarchy plugin disable` followed by `enable` resets this entry to a
-bare `{"id": "paulie420.vpn"}`. Not my doing, but it will eat your settings, so
+bare `{"id": "atomicangel.vpn"}`. Not my doing, but it will eat your settings, so
 keep a copy somewhere.
 
 ## Adding your VPN
@@ -353,7 +358,7 @@ beside `PiaProvider`, add it to the `providers` list. That's the whole job.
 Honestly, great job to hand off. The contract is tiny and there are two working
 examples sitting right there. Paste this at your assistant of choice:
 
-> I'm writing a provider for the Omarchy `paulie420.vpn` bar widget.
+> I'm writing a provider for the Omarchy `atomicangel.vpn` bar widget.
 > Read `WireGuardProvider.qml` and `PiaProvider.qml` in this repo first, they
 > define the interface I need to implement.
 >

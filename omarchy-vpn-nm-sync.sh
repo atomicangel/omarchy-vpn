@@ -2,7 +2,7 @@
 #
 # omarchy-vpn-nm-sync.sh
 #
-# Keep the paulie420.vpn bar widget's WireGuard list in sync with
+# Keep the atomicangel.vpn bar widget's WireGuard list in sync with
 # NetworkManager. The plugin's `wireguard` list in
 # ~/.config/omarchy/shell.json is static -- it is read once at load time and
 # never re-scanned -- so this script rebuilds it from the WireGuard profiles
@@ -75,7 +75,7 @@ for line in out.decode().splitlines():
 
 def find_entry(obj):
     if isinstance(obj, dict):
-        if obj.get("id") == "paulie420.vpn":
+        if obj.get("id") == "atomicangel.vpn":
             return obj
         for v in obj.values():
             r = find_entry(v)
@@ -90,7 +90,7 @@ def find_entry(obj):
 
 entry = find_entry(data)
 if entry is None:
-    sys.exit("paulie420.vpn bar entry not found in " + in_path)
+    sys.exit("atomicangel.vpn bar entry not found in " + in_path)
 
 wg = entry.get("wireguard")
 if isinstance(wg, dict):

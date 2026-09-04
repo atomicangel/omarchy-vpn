@@ -14,8 +14,8 @@ import qs.Ui
 
 Panel {
   id: root
-  moduleName: "paulie420.vpn"
-  ipcTarget: "paulie420.vpn"
+  moduleName: "atomicangel.vpn"
+  ipcTarget: "atomicangel.vpn"
 
   // The bar's ModuleSlot sizes itself from the loaded item's implicit size.
   // Panel derives from a plain Item, which has none, so without these two
