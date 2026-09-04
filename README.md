@@ -19,6 +19,35 @@ entries.
 And you can run several at once. A homelab tunnel and a commercial VPN sit side
 by side in the same panel, each with its own state, traffic and switch.
 
+## This fork
+
+This is a fork of [paulie420's original](https://github.com/Paulie420/omarchy-vpn),
+forked by [atomicangel](https://github.com/atomicangel), with one purpose:
+making WireGuard tunnels that **NetworkManager manages** first-class citizens.
+The stock WireGuard provider drives `systemctl start/stop wg-quick@<iface>` —
+the right lever when wg-quick owns the tunnel, the wrong one when
+NetworkManager does. On an NM-managed box the unit never exists, so a
+perfectly healthy tunnel shows as "Interface missing" and the switch does
+nothing.
+
+Two additions, everything else upstream's:
+
+* **`connectionName`** — a new field on `wireguard` entries. When set, state
+  is read from `nmcli con show --active` and connect/disconnect run
+  `nmcli con up/down id '<connectionName>'` instead of touching the
+  `wg-quick@` unit. Liveness is still judged by `rx_bytes`, so the "green
+  while the peer is dead" problem this widget exists to fix stays fixed.
+* **`omarchy-vpn-nm-sync.sh`** — a helper in the repository root that rebuilds
+  the `wireguard` list in `shell.json` from the WireGuard profiles
+  NetworkManager knows about, merging with what you already have. See
+  [Keeping the list in sync](#keeping-the-list-in-sync).
+
+> **Disclaimer: AI-assisted modification.** The changes in this fork — the
+> `connectionName` support, the sync helper, and this README section — were
+> implemented with an AI coding assistant, then reviewed and tested by the
+> fork's maintainer on a live system. The upstream code, and the parts of the
+> README left untouched, remain paulie420's work.
+
 ## Why not just cram it into the wifi menu
 
 Because a VPN isn't a network connection, it's a policy sitting on top of one.
@@ -105,7 +134,7 @@ Nothing else. It doesn't install anything, and it never writes to your config.
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/Paulie420/omarchy-vpn.git --enable
+omarchy plugin add https://github.com/atomicangel/omarchy-vpn.git --enable
 omarchy bar move paulie420.vpn --section right
 ```
 
@@ -136,6 +165,14 @@ all of it is optional.
     "enabled": true,
     "label": "Homelab",
     "interface": "wg0",
+
+    // This fork: the NetworkManager connection name (as printed by
+    // `nmcli connection show`), for tunnels NM manages. When set, state
+    // comes from `nmcli con show --active` and connect/disconnect run
+    // `nmcli con up/down id '<connectionName>'` instead of
+    // `systemctl start/stop wg-quick@<interface>`. Leave it empty for the
+    // stock wg-quick behaviour.
+    "connectionName": "",
 
     // Optional. Hex, or a theme role name (accent / urgent / foreground /
     // muted). Leave it out and you get an automatic colour. See "Which VPN
@@ -175,6 +212,10 @@ use the `wireguard` list. Point it at the interface, hand it the vendor's CLI:
     "connectCommand": "mullvad connect", "disconnectCommand": "mullvad disconnect" }
 ]
 ```
+
+Tunnels that **NetworkManager manages** get the same treatment with one extra
+field: set `connectionName` to the profile name and the provider drives
+`nmcli con up/down` for you — no commands needed at all.
 
 **If it has any CLI at all**, use the `custom` list. This drives anything:
 
@@ -265,6 +306,26 @@ themed picker instead of something I bolted on.
 
 PIA gets this for free, no config needed — it reads all 190 regions from
 `piactl get regions`.
+
+### Keeping the list in sync
+
+The `wireguard` list is static: it is read when the shell loads, and the
+widget never re-scans NetworkManager on its own. So when you add or remove an
+NM WireGuard profile, update the list with the helper from this repo
+(`omarchy-vpn-nm-sync.sh`, in the repository root):
+
+```bash
+omarchy-vpn-nm-sync.sh --dry-run   # print what would change, touch nothing
+omarchy-vpn-nm-sync.sh             # rewrite the list, restart the shell
+```
+
+It rebuilds the list from `nmcli -t -f NAME,TYPE connection show` and merges
+with what you have: entries whose `connectionName` still exists are kept
+verbatim (your `color`, `reachabilityHost` and custom commands survive),
+entries for profiles that are gone are dropped, entries without a
+`connectionName` (plain wg-quick or fully custom) are left alone, and new
+profiles get a default entry. It only restarts the shell when the file
+actually changed, so it is safe to run on a timer.
 
 ### When you actually have to write code
 
